@@ -1,3 +1,11 @@
-.venv
-.git
-.gitignore
+.venv/
+.git/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+db.sqlite3
+.DS_Store
+.env
+node_modules/
+frontend/build/

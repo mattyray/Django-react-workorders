@@ -1,6 +1,11 @@
-.venv
+.venv/
 __pycache__/
+*.pyc
+*.pyo
+*.pyd
 db.sqlite3
 .DS_Store
 docker-compose-prod.yml
-.env 
+.env
+node_modules/
+frontend/build/
