@@ -1,9 +1,11 @@
 services:
   web:
-    build: .
-    command: python manage.py runserver 0.0.0.0:8002  # Run Django on port 8002
+    build:
+      context: ./backend  # 👈 ONLY backend is built
+    working_dir: /code    # 👈 Set working dir to /code
+    command: python manage.py runserver 0.0.0.0:8002
     ports:
-      - "8002:8002"  # Maps container port 8002 to localhost:8002
+      - "8002:8002"
     depends_on:
       db:
         condition: service_healthy
@@ -15,15 +17,16 @@ services:
       - "DJANGO_SECURE_HSTS_PRELOAD=False"
       - "DJANGO_SESSION_COOKIE_SECURE=False"
       - "DJANGO_CSRF_COOKIE_SECURE=False"
-      - "DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}"
+      - "DATABASE_URL=postgresql://postgres:postgres@db:5432/art_moving"
     volumes:
-      - .:/code
+      - ./backend:/code   # 👈 Mount only the backend
     networks:
       - art_moving_network
 
+
   db:
     image: postgres:15
-    container_name: art_moving_db
+    container_name: art_moving_react_db
     restart: always
     volumes:
       - postgres_data:/var/lib/postgresql/data/
