@@ -7,7 +7,7 @@ class EventInline(admin.TabularInline):
 
 class WorkOrderAdmin(admin.ModelAdmin):
     inlines = [EventInline]
-    list_display = ['id', 'client', 'job_description', 'status']
+    list_display = ['id', 'client_name', 'job_description', 'status']
     search_fields = ['client__name', 'job_description']
     list_filter = ['status', 'created_at', 'updated_at']
 

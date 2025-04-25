@@ -51,3 +51,21 @@ class JobNote(models.Model):
 
     def __str__(self):
         return f"Note {self.id} for WorkOrder {self.work_order.id}"
+    
+
+class Event(models.Model):
+    EVENT_TYPES = [
+        ('pickup', 'Pickup'),
+        ('pickup_wrap', 'Pickup and Wrap'),
+        ('wrap', 'Wrap'),
+        ('install', 'Install'),
+        ('deliver_install', 'Deliver and Install'),
+        ('dropoff', 'Drop Off'),
+    ]
+    work_order = models.ForeignKey(WorkOrder, on_delete=models.CASCADE, related_name='events')
+    event_type = models.CharField(max_length=30, choices=EVENT_TYPES)
+    address = models.CharField(max_length=255, blank=True)
+    date = models.DateField(blank=True, null=True)
+
+    def __str__(self):
+        return f"{self.get_event_type_display()} for WorkOrder #{self.work_order.id}"
