@@ -20,9 +20,7 @@ DEBUG = env.bool("DJANGO_DEBUG", default=False)
 ALLOWED_HOSTS = env.list("DJANGO_ALLOWED_HOSTS", default=[
     "localhost",
     "127.0.0.1",
-    "art-moving-buisness-0a734245a61f.herokuapp.com",
-    # "your-custom-domain.com",
-    # "www.your-custom-domain.com"
+    "0.0.0.0",
 ])
 
 # ✅ Installed Apps
@@ -35,21 +33,17 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
 
     # Custom apps
-    'accounts.apps.AccountsConfig',
-    'pages.apps.PagesConfig',
     'workorders',
-    'clients',
-    'invoices',
 
     # Third-party packages
-    'crispy_forms',
-    'crispy_bootstrap5',
-    'import_export',
+    "rest_framework",
+    "corsheaders",
 
 ]
 
 # ✅ Middleware
 MIDDLEWARE = [
+    "corsheaders.middleware.CorsMiddleware",  # 🛑 Put CORS middleware at the top!
     'django.middleware.security.SecurityMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -67,7 +61,7 @@ ROOT_URLCONF = 'django_project.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [BASE_DIR / 'templates'],  # Include custom templates
+        'DIRS': [],  # Include custom templates
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -89,8 +83,6 @@ DATABASES = {
 }
 
 
-# ✅ Authentication
-AUTH_USER_MODEL = 'accounts.CustomUser'
 
 # ✅ Password Validation
 AUTH_PASSWORD_VALIDATORS = [
@@ -148,4 +140,3 @@ STATICFILES_FINDERS = [
     'django.contrib.staticfiles.finders.AppDirectoriesFinder',
 ]
 
-IMPORT_EXPORT_USE_TRANSACTIONS = True
