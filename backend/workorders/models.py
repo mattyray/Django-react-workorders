@@ -32,3 +32,22 @@ class WorkOrder(models.Model):
             self.status = 'pending'
         # Optional:
         # self.save()
+
+
+
+class JobAttachment(models.Model):
+    work_order = models.ForeignKey(WorkOrder, on_delete=models.CASCADE, related_name='attachments')
+    file = models.FileField(upload_to='job_attachments/')
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Attachment {self.id} for WorkOrder {self.work_order.id}"
+
+
+class JobNote(models.Model):
+    work_order = models.ForeignKey(WorkOrder, on_delete=models.CASCADE, related_name='notes')
+    note = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Note {self.id} for WorkOrder {self.work_order.id}"

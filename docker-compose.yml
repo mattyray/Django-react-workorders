@@ -1,8 +1,8 @@
 services:
   web:
     build:
-      context: ./backend  # 👈 ONLY backend is built
-    working_dir: /code    # 👈 Set working dir to /code
+      context: .  # 👈 ONLY backend is built
+    working_dir: /code/backend    # 👈 Set working dir to /code
     command: python manage.py runserver 0.0.0.0:8002
     ports:
       - "8002:8002"
@@ -19,7 +19,7 @@ services:
       - "DJANGO_CSRF_COOKIE_SECURE=False"
       - "DATABASE_URL=postgresql://postgres:postgres@db:5432/art_moving"
     volumes:
-      - ./backend:/code   # 👈 Mount only the backend
+      - .:/code   # 👈 Mount only the backend
     networks:
       - art_moving_network
 
