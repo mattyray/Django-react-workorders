@@ -202,7 +202,7 @@ function App() {
             <h3>Pending Events:</h3>
             <ul style={{ listStyle: "none", padding: 0 }}>
               {pendingEvents.map((event, index) => (
-                <li key={index} style={{ padding: "8px", backgroundColor: "#f1f1f1", marginBottom: "8px", borderRadius: "6px" }}>
+                <li key={index} style={{ padding: "8px", backgroundColor: "#f1f1f1", marginBottom: "8px", borderRadius: "6px", color: "black" }}>
                   {event.event_type} at {event.address} on {event.date}
                 </li>
               ))}
@@ -222,7 +222,7 @@ function App() {
       ) : (
         <ul style={{ listStyle: "none", padding: 0 }}>
           {workorders.map((order) => (
-            <li key={order.id} style={{ marginBottom: "1rem", padding: "1rem", backgroundColor: "#f9f9f9", border: "1px solid #ddd", borderRadius: "8px" }}>
+            <li key={order.id} style={{ marginBottom: "1rem", padding: "1rem", backgroundColor: "#f9f9f9", border: "1px solid #ddd", borderRadius: "8px", color: "black" }}>
               <strong>Client:</strong> {order.client_name}<br />
               <strong>Job:</strong> {order.job_description}<br />
               <strong>Status:</strong> {order.status}<br />
