@@ -5,8 +5,16 @@ function App() {
 
   useEffect(() => {
     fetch('http://localhost:8002/api/workorders/')
-      .then(response => response.json())
-      .then(data => setWorkorders(data))
+      .then(response => {
+        if (!response.ok) {
+          throw new Error('Network response was not OK');
+        }
+        return response.json();
+      })
+      .then(data => {
+        console.log('Fetched WorkOrders:', data);  // 👈 Log to console
+        setWorkorders(data);
+      })
       .catch(error => console.error('Error fetching work orders:', error));
   }, []);
 
@@ -19,7 +27,7 @@ function App() {
         <ul>
           {workorders.map((order) => (
             <li key={order.id}>
-              Job: {order.job_description} - Status: {order.status}
+              Client: {order.client_name} — Job: {order.job_description} — Status: {order.status}
             </li>
           ))}
         </ul>
