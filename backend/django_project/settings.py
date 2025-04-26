@@ -140,3 +140,4 @@ STATICFILES_FINDERS = [
     'django.contrib.staticfiles.finders.AppDirectoriesFinder',
 ]
 
+CORS_ALLOW_ALL_ORIGINS = True  # 👈 For development only
