@@ -57,47 +57,57 @@ function App() {
   };
 
   return (
-    <div style={{ padding: "2rem" }}>
-      <h1>Work Orders</h1>
+    <div style={{ padding: "2rem", maxWidth: "600px", margin: "0 auto", fontFamily: "Arial, sans-serif" }}>
+      <h1 style={{ textAlign: "center", marginBottom: "2rem" }}>Work Orders</h1>
 
       {/* Create Work Order Form */}
-      <form onSubmit={handleSubmit} style={{ marginBottom: "2rem" }}>
+      <form onSubmit={handleSubmit} style={{ marginBottom: "2rem", display: "flex", flexDirection: "column", gap: "1rem" }}>
         <div>
-          <label>Client Name:</label><br />
+          <label style={{ fontWeight: "bold" }}>Client Name:</label><br />
           <input
             type="text"
             value={clientName}
             onChange={(e) => setClientName(e.target.value)}
             required
+            style={{ width: "100%", padding: "8px", marginTop: "4px" }}
           />
         </div>
         <div>
-          <label>Job Description:</label><br />
+          <label style={{ fontWeight: "bold" }}>Job Description:</label><br />
           <textarea
             value={jobDescription}
             onChange={(e) => setJobDescription(e.target.value)}
             required
+            style={{ width: "100%", padding: "8px", marginTop: "4px", minHeight: "80px" }}
           />
         </div>
         <div>
-          <label>Status:</label><br />
-          <select value={status} onChange={(e) => setStatus(e.target.value)}>
+          <label style={{ fontWeight: "bold" }}>Status:</label><br />
+          <select
+            value={status}
+            onChange={(e) => setStatus(e.target.value)}
+            style={{ width: "100%", padding: "8px", marginTop: "4px" }}
+          >
             <option value="pending">Pending</option>
             <option value="in_progress">In Progress</option>
             <option value="completed">Completed</option>
           </select>
         </div>
-        <button type="submit" style={{ marginTop: "1rem" }}>Create Work Order</button>
+        <button type="submit" style={{ padding: "10px", backgroundColor: "#4CAF50", color: "white", border: "none", cursor: "pointer", fontWeight: "bold" }}>
+          Create Work Order
+        </button>
       </form>
 
       {/* List of Work Orders */}
       {workorders.length === 0 ? (
-        <p>No work orders found.</p>
+        <p style={{ textAlign: "center" }}>No work orders found.</p>
       ) : (
-        <ul>
+        <ul style={{ listStyle: "none", padding: 0 }}>
           {workorders.map((order) => (
-            <li key={order.id}>
-              Client: {order.client_name} — Job: {order.job_description} — Status: {order.status}
+            <li key={order.id} style={{ marginBottom: "1rem", padding: "1rem", backgroundColor: "#f9f9f9", border: "1px solid #ddd", borderRadius: "8px" }}>
+              <strong>Client:</strong> {order.client_name}<br />
+              <strong>Job:</strong> {order.job_description}<br />
+              <strong>Status:</strong> {order.status}
             </li>
           ))}
         </ul>
