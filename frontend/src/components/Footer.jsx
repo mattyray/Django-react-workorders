@@ -1,7 +1,7 @@
 function Footer() {
-    const footerStyle = {
+    const footerWrapperStyle = {
       background: "#1a1a1a",
-      padding: "1rem",
+      padding: "1rem 0",
       color: "white",
       textAlign: "center",
     };
@@ -9,10 +9,11 @@ function Footer() {
     const containerStyle = {
       maxWidth: '1200px',
       margin: '0 auto',
+      padding: '0 2rem',
     };
   
     return (
-      <footer style={footerStyle}>
+      <footer style={footerWrapperStyle}>
         <div style={containerStyle}>
           © 2025 Work Orders App
         </div>

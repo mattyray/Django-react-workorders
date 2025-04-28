@@ -3,19 +3,20 @@ import { Link, useLocation } from 'react-router-dom';
 function Navbar() {
   const location = useLocation();
 
-  const navStyle = {
+  const navWrapperStyle = {
     backgroundColor: '#1a1a1a',
-    padding: '1rem 2rem',
-    color: 'white',
-    fontFamily: 'Arial, sans-serif',
+    padding: '1rem 0',   // <-- no side padding here
   };
 
   const containerStyle = {
     maxWidth: '1200px',
     margin: '0 auto',
+    padding: '0 2rem',  // <-- now inside container
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'space-between',
+    color: 'white',
+    fontFamily: 'Arial, sans-serif',
   };
 
   const linkStyle = {
@@ -34,7 +35,7 @@ function Navbar() {
   };
 
   return (
-    <nav style={navStyle}>
+    <nav style={navWrapperStyle}>
       <div style={containerStyle}>
         <div style={{ fontWeight: 'bold', fontSize: '1.5rem' }}>
           WorkOrdersApp
