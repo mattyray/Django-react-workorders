@@ -1,16 +1,21 @@
 import { Link, useLocation } from 'react-router-dom';
 
 function Navbar() {
-  const location = useLocation();  // Helps highlight active link later
+  const location = useLocation();
 
   const navStyle = {
     backgroundColor: '#1a1a1a',
     padding: '1rem 2rem',
+    color: 'white',
+    fontFamily: 'Arial, sans-serif',
+  };
+
+  const containerStyle = {
+    maxWidth: '1200px',
+    margin: '0 auto',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'space-between',
-    color: 'white',
-    fontFamily: 'Arial, sans-serif',
   };
 
   const linkStyle = {
@@ -25,27 +30,29 @@ function Navbar() {
 
   const activeLinkStyle = {
     ...linkStyle,
-    borderBottom: '2px solid #4CAF50',  // Green underline if active
+    borderBottom: '2px solid #4CAF50',
   };
 
   return (
     <nav style={navStyle}>
-      <div style={{ fontWeight: 'bold', fontSize: '1.5rem' }}>
-        WorkOrdersApp
-      </div>
-      <div>
-        <Link
-          to="/"
-          style={location.pathname === '/' ? activeLinkStyle : linkStyle}
-        >
-          Home
-        </Link>
-        <Link
-          to="/workorders"
-          style={location.pathname === '/workorders' ? activeLinkStyle : linkStyle}
-        >
-          Work Orders
-        </Link>
+      <div style={containerStyle}>
+        <div style={{ fontWeight: 'bold', fontSize: '1.5rem' }}>
+          WorkOrdersApp
+        </div>
+        <div>
+          <Link
+            to="/"
+            style={location.pathname === '/' ? activeLinkStyle : linkStyle}
+          >
+            Home
+          </Link>
+          <Link
+            to="/workorders"
+            style={location.pathname === '/workorders' ? activeLinkStyle : linkStyle}
+          >
+            Work Orders
+          </Link>
+        </div>
       </div>
     </nav>
   );
