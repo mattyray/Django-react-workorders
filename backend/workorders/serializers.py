@@ -3,10 +3,24 @@
 from rest_framework import serializers
 from .models import WorkOrder, Event, JobAttachment, JobNote
 
-class EventSerializer(serializers.ModelSerializer):
+class WorkOrderSerializer(serializers.ModelSerializer):
+    events = EventSerializer(many=True, required=False)
+
     class Meta:
-        model = Event
-        fields = '__all__'
+        model = WorkOrder
+        fields = [
+            'id', 'client_name', 'job_description', 'estimated_cost', 
+            'status', 'completed_at', 'created_at', 'updated_at', 'events'
+        ]
+        read_only_fields = ['id', 'created_at', 'updated_at']
+
+    def create(self, validated_data):
+        events_data = validated_data.pop('events', [])
+        workorder = WorkOrder.objects.create(**validated_data)
+        for event_data in events_data:
+            Event.objects.create(work_order=workorder, **event_data)
+        return workorder
+
 
 class JobAttachmentSerializer(serializers.ModelSerializer):
     class Meta:
