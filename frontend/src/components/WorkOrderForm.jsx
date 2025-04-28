@@ -1,23 +1,25 @@
 import { useState } from 'react';
 
 function WorkOrderForm({ onAddWorkOrder }) {
-  const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
-  const [status, setStatus] = useState('Pending');
+  const [clientName, setClientName] = useState('');
+  const [jobDescription, setJobDescription] = useState('');
+  const [status, setStatus] = useState('pending');
 
   const handleSubmit = (e) => {
     e.preventDefault();
+
     const newOrder = {
-      id: Date.now(), // simple unique id
-      title,
-      description,
-      status,
+      client_name: clientName,
+      job_description: jobDescription,
+      status: status,
     };
+
     onAddWorkOrder(newOrder);
-    // Clear form
-    setTitle('');
-    setDescription('');
-    setStatus('Pending');
+
+    // Clear the form
+    setClientName('');
+    setJobDescription('');
+    setStatus('pending');
   };
 
   return (
@@ -25,21 +27,21 @@ function WorkOrderForm({ onAddWorkOrder }) {
       <h2 style={{ textAlign: 'center', marginBottom: '1rem' }}>Add New Work Order</h2>
 
       <div style={{ marginBottom: '1rem' }}>
-        <label>Title</label>
+        <label>Client Name</label>
         <input
           type="text"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
+          value={clientName}
+          onChange={(e) => setClientName(e.target.value)}
           required
           style={{ width: '100%', padding: '0.5rem', marginTop: '0.5rem' }}
         />
       </div>
 
       <div style={{ marginBottom: '1rem' }}>
-        <label>Description</label>
+        <label>Job Description</label>
         <textarea
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
+          value={jobDescription}
+          onChange={(e) => setJobDescription(e.target.value)}
           required
           style={{ width: '100%', padding: '0.5rem', marginTop: '0.5rem', minHeight: '100px' }}
         />
@@ -52,9 +54,9 @@ function WorkOrderForm({ onAddWorkOrder }) {
           onChange={(e) => setStatus(e.target.value)}
           style={{ width: '100%', padding: '0.5rem', marginTop: '0.5rem' }}
         >
-          <option value="Pending">Pending</option>
-          <option value="In Progress">In Progress</option>
-          <option value="Completed">Completed</option>
+          <option value="pending">Pending</option>
+          <option value="in_progress">In Progress</option>
+          <option value="completed">Completed</option>
         </select>
       </div>
 
