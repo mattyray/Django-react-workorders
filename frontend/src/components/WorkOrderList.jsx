@@ -53,4 +53,4 @@ function WorkOrderList({ workOrders, onAddEvent }) {
   );
 }
 
-export default WorkOrder
+export default WorkOrderList;
