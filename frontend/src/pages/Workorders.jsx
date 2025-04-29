@@ -32,6 +32,29 @@ function WorkOrders() {
     }
   };
 
+  const handleAddEvent = async (workOrderId, eventData) => {
+    try {
+      const response = await axios.post('http://localhost:8002/api/events/', {
+        ...eventData,
+        work_order: workOrderId,
+      });
+
+      // Update the specific work order with the new event
+      setWorkOrders((prevOrders) =>
+        prevOrders.map((order) =>
+          order.id === workOrderId
+            ? {
+                ...order,
+                events: [...(order.events || []), response.data],
+              }
+            : order
+        )
+      );
+    } catch (error) {
+      console.error('Error adding event:', error);
+    }
+  };
+
   return (
     <div style={{ padding: "2rem", textAlign: "center" }}>
       <h1>Work Orders Page</h1>
@@ -43,7 +66,7 @@ function WorkOrders() {
         {loading ? (
           <p>Loading work orders...</p>
         ) : (
-          <WorkOrderList workOrders={workOrders} />
+          <WorkOrderList workOrders={workOrders} onAddEvent={handleAddEvent} />
         )}
       </div>
     </div>

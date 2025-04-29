@@ -1,4 +1,20 @@
 import EventForm from './EventForm';
+import { formatDate } from '../utils/formatDate';
+
+function getEventIcon(type) {
+  switch (type) {
+    case 'pickup':
+      return '📦';
+    case 'install':
+      return '🛠';
+    case 'dropoff':
+      return '📍';
+    case 'wrap':
+      return '🎁';
+    default:
+      return '📅';
+  }
+}
 
 function WorkOrderList({ workOrders, onAddEvent }) {
   if (workOrders.length === 0) {
@@ -37,8 +53,15 @@ function WorkOrderList({ workOrders, onAddEvent }) {
               <h4 style={{ marginTop: "1rem" }}>Scheduled Events:</h4>
               <ul style={{ paddingLeft: "1rem", fontSize: "0.9rem" }}>
                 {order.events.map((event, index) => (
-                  <li key={index}>
-                    <strong>{event.event_type}</strong> — {event.address} on {event.date}
+                  <li key={index} style={{ marginBottom: "0.5rem" }}>
+                    <span style={{ marginRight: "0.5rem" }}>{getEventIcon(event.event_type)}</span>
+                    <strong>{event.event_type.replace('_', ' ')}</strong>
+                    <br />
+                    <span style={{ color: "#bbb" }}>{event.address}</span>
+                    <br />
+                    <span style={{ fontSize: "0.85rem", color: "#4CAF50" }}>
+                      {formatDate(event.date)}
+                    </span>
                   </li>
                 ))}
               </ul>
