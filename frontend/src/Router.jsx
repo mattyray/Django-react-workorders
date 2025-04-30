@@ -1,24 +1,23 @@
-  import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-  import Home from './pages/Home';
-  import WorkOrders from './pages/WorkOrders';
-  import Navbar from './components/Navbar';
-  import Footer from './components/Footer';
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import Home       from './pages/Home.jsx';
+import WorkOrders from './pages/WorkOrders.jsx';
+import Navbar     from './components/Navbar.jsx';
+import Footer     from './components/Footer.jsx';
 
-  function AppRouter() {
-    return (
-      <Router>
-        <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}>
-          <Navbar />
-          <div style={{ flex: "1" }}>
-            <Routes>
-              <Route path="/" element={<Home />} />
-              <Route path="/workorders" element={<WorkOrders />} />
-            </Routes>
-          </div>
-          <Footer />
-        </div>
-      </Router>
-    );
-  }
-
-  export default AppRouter;
+export default function AppRouter() {
+  return (
+    <Router>
+      <div className="flex flex-col min-h-screen">
+        <Navbar />
+        <main className="flex-1">
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/workorders" element={<WorkOrders />} />
+          </Routes>
+        </main>
+        <Footer />
+      </div>
+    </Router>
+  );
+}
