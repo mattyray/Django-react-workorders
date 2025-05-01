@@ -1,9 +1,12 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import Home       from './pages/Home.jsx';
-import WorkOrders from './pages/WorkOrders.jsx';
-import Navbar     from './components/Navbar.jsx';
-import Footer     from './components/Footer.jsx';
+import Home                    from './pages/Home.jsx';
+import WorkOrders              from './pages/WorkOrders.jsx';
+import CreateWorkOrderPage     from './pages/CreateWorkOrderPage.jsx';
+import WorkOrderDetailPage     from './pages/WorkOrderDetailPage.jsx';
+import EditWorkOrderPage       from './pages/EditWorkOrderPage.jsx';
+import Navbar                  from './components/Navbar.jsx';
+import Footer                  from './components/Footer.jsx';
 
 export default function AppRouter() {
   return (
@@ -14,6 +17,9 @@ export default function AppRouter() {
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/workorders" element={<WorkOrders />} />
+            <Route path="/workorders/new" element={<CreateWorkOrderPage />} />
+            <Route path="/workorders/:id" element={<WorkOrderDetailPage />} />
+            <Route path="/workorders/:id/edit" element={<EditWorkOrderPage />} />
           </Routes>
         </main>
         <Footer />
