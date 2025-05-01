@@ -517,24 +517,33 @@ admin.site.register(JobNote)
   },
   "devDependencies": {
     "@eslint/js": "^9.22.0",
+    "@tailwindcss/postcss": "^4.1.5",
+    "@tailwindcss/vite": "^4.1.5",
     "@types/react": "^19.0.10",
     "@types/react-dom": "^19.0.4",
     "@vitejs/plugin-react": "^4.3.4",
+    "autoprefixer": "^10.4.21",
     "eslint": "^9.22.0",
     "eslint-plugin-react-hooks": "^5.2.0",
     "eslint-plugin-react-refresh": "^0.4.19",
     "globals": "^16.0.0",
+    "postcss": "^8.5.3",
+    "tailwindcss": "^4.1.5",
     "vite": "^6.3.1"
   }
 }
 
 ===== frontend/vite.config.js =====
+// frontend/vite.config.js
 import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react'
+import react             from '@vitejs/plugin-react'
+import tailwindcss       from '@tailwindcss/vite'
 
-// https://vite.dev/config/
 export default defineConfig({
-  plugins: [react()],
+  plugins: [
+    react(),
+    tailwindcss(),    // ← our new Tailwind plugin for Vite
+  ],
 })
 
 ===== frontend/index.html =====
@@ -553,122 +562,52 @@ export default defineConfig({
 </html>
 
 ===== frontend/src/App.jsx =====
-// src/App.jsx
-import AppRouter from './Router';
+import React        from 'react';
+import AppRouter    from './Router.jsx';
 
-function App() {
+export default function App() {
   return <AppRouter />;
 }
 
-export default App;
-
 ===== frontend/src/Router.jsx =====
+import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import Home from './pages/Home';
-import WorkOrders from './pages/WorkOrders';
-import Navbar from './components/Navbar';
-import Footer from './components/Footer';
+import Home       from './pages/Home.jsx';
+import WorkOrders from './pages/WorkOrders.jsx';
+import Navbar     from './components/Navbar.jsx';
+import Footer     from './components/Footer.jsx';
 
-function AppRouter() {
+export default function AppRouter() {
   return (
     <Router>
-      <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}>
+      <div className="flex flex-col min-h-screen">
         <Navbar />
-        <div style={{ flex: "1" }}>
+        <main className="flex-1">
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/workorders" element={<WorkOrders />} />
           </Routes>
-        </div>
+        </main>
         <Footer />
       </div>
     </Router>
   );
 }
 
-export default AppRouter;
-
 ===== frontend/src/main.jsx =====
-import { StrictMode } from 'react'
-import { createRoot } from 'react-dom/client'
-import './index.css'
-import App from './App.jsx'
+import React, { StrictMode } from 'react';
+import { createRoot }      from 'react-dom/client';
+import './index.css';
+import App                 from './App.jsx';
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
     <App />
-  </StrictMode>,
-)
+  </StrictMode>
+);
 
 ===== frontend/src/index.css =====
-:root {
-  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
-  line-height: 1.5;
-  font-weight: 400;
-
-  color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
-
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
-
-a {
-  font-weight: 500;
-  color: #646cff;
-  text-decoration: inherit;
-}
-a:hover {
-  color: #535bf2;
-}
-
-bbody {
-  margin: 0;
-  min-width: 320px;
-  min-height: 100vh;
-  background-color: #242424;
-}
-
-
-h1 {
-  font-size: 3.2em;
-  line-height: 1.1;
-}
-
-button {
-  border-radius: 8px;
-  border: 1px solid transparent;
-  padding: 0.6em 1.2em;
-  font-size: 1em;
-  font-weight: 500;
-  font-family: inherit;
-  background-color: #1a1a1a;
-  cursor: pointer;
-  transition: border-color 0.25s;
-}
-button:hover {
-  border-color: #646cff;
-}
-button:focus,
-button:focus-visible {
-  outline: 4px auto -webkit-focus-ring-color;
-}
-
-@media (prefers-color-scheme: light) {
-  :root {
-    color: #213547;
-    background-color: #ffffff;
-  }
-  a:hover {
-    color: #747bff;
-  }
-  button {
-    background-color: #f9f9f9;
-  }
-}
+@import "tailwindcss";
 
 ===== frontend/src/App.css =====
 #root {
@@ -1033,17 +972,55 @@ function WorkOrderList({ workOrders, onAddEvent }) {
 export default WorkOrderList;
 
 ===== frontend/src/pages/Home.jsx =====
-function Home() {
-    return (
-      <div style={{ padding: "2rem", textAlign: "center" }}>
-        <h1>Welcome to the Work Orders App</h1>
-        <p>Manage your work orders efficiently and easily.</p>
-      </div>
-    );
-  }
-  
-  export default Home;
-  
+import React from 'react';
+import { Link } from 'react-router-dom';
+
+export default function Home() {
+  return (
+    <main className="min-h-screen bg-gradient-to-r from-blue-500 to-indigo-600 text-white">
+      <section className="min-h-[70vh] flex flex-col items-center justify-center px-6">
+        <h1 className="text-4xl md:text-6xl font-bold mb-4 drop-shadow-lg">
+          Streamline Your Work Orders
+        </h1>
+        <p className="text-lg md:text-2xl mb-8 text-center max-w-2xl">
+          Quickly create, schedule, and track every job—all in one place.
+        </p>
+        <Link
+          to="/workorders"
+          className="
+            bg-white text-blue-600 font-semibold
+            px-6 py-3 rounded-full
+            shadow-md hover:shadow-lg
+            transition-shadow duration-200
+          "
+        >
+          Get Started
+        </Link>
+      </section>
+
+      <section className="py-12 bg-gray-50 text-gray-800 dark:bg-gray-800 dark:text-gray-200">
+        <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8 px-6">
+          <div className="bg-white dark:bg-gray-700 rounded-xl shadow-md p-6 text-center">
+            <div className="text-5xl mb-4">📝</div>
+            <h3 className="text-xl font-semibold mb-2">Create Orders</h3>
+            <p>Easy form to add new jobs.</p>
+          </div>
+          <div className="bg-white dark:bg-gray-700 rounded-xl shadow-md p-6 text-center">
+            <div className="text-5xl mb-4">📅</div>
+            <h3 className="text-xl font-semibold mb-2">Schedule Events</h3>
+            <p>Pickups, installs, drop-offs.</p>
+          </div>
+          <div className="bg-white dark:bg-gray-700 rounded-xl shadow-md p-6 text-center">
+            <div className="text-5xl mb-4">📊</div>
+            <h3 className="text-xl font-semibold mb-2">Track Status</h3>
+            <p>Always know what’s in progress.</p>
+          </div>
+        </div>
+      </section>
+    </main>
+  );
+}
+
 ===== frontend/src/pages/WorkOrders.jsx =====
 import { useState, useEffect } from 'react';
 import axios from 'axios';

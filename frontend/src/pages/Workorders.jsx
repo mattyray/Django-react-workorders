@@ -1,76 +1,42 @@
-import { useState, useEffect } from 'react';
-import axios from 'axios';
-import WorkOrderList from '../components/WorkOrderList';
-import WorkOrderForm from '../components/WorkOrderForm';
+import React, { useState, useEffect } from 'react';
+import { Link }                             from 'react-router-dom';
+import WorkOrderList                        from '../components/WorkOrderList';
+import { fetchWorkOrders }                  from '../services/api';
 
-function WorkOrders() {
+export default function WorkOrders() {
   const [workOrders, setWorkOrders] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading]       = useState(true);
 
-  // Fetch work orders on page load
   useEffect(() => {
-    fetchWorkOrders();
+    (async () => {
+      try {
+        const response = await fetchWorkOrders();
+        setWorkOrders(response.data);
+      } catch (error) {
+        console.error('Error fetching work orders:', error);
+      } finally {
+        setLoading(false);
+      }
+    })();
   }, []);
 
-  const fetchWorkOrders = async () => {
-    try {
-      const response = await axios.get('http://localhost:8002/api/workorders/');
-      setWorkOrders(response.data);
-    } catch (error) {
-      console.error('Error fetching work orders:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleAddWorkOrder = async (newOrder) => {
-    try {
-      const response = await axios.post('http://localhost:8002/api/workorders/', newOrder);
-      setWorkOrders((prevOrders) => [response.data, ...prevOrders]);
-    } catch (error) {
-      console.error('Error adding work order:', error);
-    }
-  };
-
-  const handleAddEvent = async (workOrderId, eventData) => {
-    try {
-      const response = await axios.post('http://localhost:8002/api/events/', {
-        ...eventData,
-        work_order: workOrderId,
-      });
-
-      // Update the specific work order with the new event
-      setWorkOrders((prevOrders) =>
-        prevOrders.map((order) =>
-          order.id === workOrderId
-            ? {
-                ...order,
-                events: [...(order.events || []), response.data],
-              }
-            : order
-        )
-      );
-    } catch (error) {
-      console.error('Error adding event:', error);
-    }
-  };
-
   return (
-    <div style={{ padding: "2rem", textAlign: "center" }}>
-      <h1>Work Orders Page</h1>
-      <p>Manage your upcoming work orders below:</p>
-
-      <WorkOrderForm onAddWorkOrder={handleAddWorkOrder} />
-
-      <div style={{ marginTop: "2rem" }}>
-        {loading ? (
-          <p>Loading work orders...</p>
-        ) : (
-          <WorkOrderList workOrders={workOrders} onAddEvent={handleAddEvent} />
-        )}
+    <div className="container mx-auto p-6">
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-3xl font-bold">Work Orders</h1>
+        <Link
+          to="/workorders/new"
+          className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded"
+        >
+          New Work Order
+        </Link>
       </div>
+
+      {loading ? (
+        <p>Loading work orders...</p>
+      ) : (
+        <WorkOrderList workOrders={workOrders} />
+      )}
     </div>
   );
 }
-
-export default WorkOrders;
