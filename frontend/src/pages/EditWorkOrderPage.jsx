@@ -1,20 +1,24 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate }     from 'react-router-dom';
-import axios                           from 'axios';
+import { useParams, useNavigate }      from 'react-router-dom';
+import axios                            from 'axios';
 
 export default function EditWorkOrderPage() {
-  const { id } = useParams();
-  const navigate = useNavigate();
-  const [form, setForm] = useState(null);
+  const { id }              = useParams();
+  const navigate            = useNavigate();
+  const [form, setForm]     = useState(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    setLoading(true);
     axios
       .get(`http://localhost:8002/api/workorders/${id}/`)
       .then(res => setForm(res.data))
-      .catch(console.error);
+      .catch(console.error)
+      .finally(() => setLoading(false));
   }, [id]);
 
-  if (!form) return <p>Loading…</p>;
+  if (loading) return <p>Loading…</p>;
+  if (!form)  return <p>Work order not found.</p>;
 
   const addEvent = () =>
     setForm(f => ({
@@ -38,11 +42,16 @@ export default function EditWorkOrderPage() {
 
   const handleSubmit = async e => {
     e.preventDefault();
+    console.log('🔔 handleSubmit fired, payload:', form);
     try {
-      await axios.put(`http://localhost:8002/api/workorders/${id}/`, form);
+      const res = await axios.put(
+        `http://localhost:8002/api/workorders/${id}/`,
+        form
+      );
+      console.log('🟢 Response from server:', res);
       navigate(`/workorders/${id}`);
     } catch (err) {
-      console.error(err);
+      console.error('🔴 Error in save:', err);
     }
   };
 
@@ -50,6 +59,7 @@ export default function EditWorkOrderPage() {
     <div className="container mx-auto p-6 space-y-6">
       <h1 className="text-2xl font-bold">Edit Work Order #{id}</h1>
       <form onSubmit={handleSubmit} className="space-y-4">
+        {/* Client Name */}
         <input
           type="text"
           placeholder="Client Name"
@@ -58,13 +68,19 @@ export default function EditWorkOrderPage() {
           className="w-full p-2 border rounded"
           required
         />
+
+        {/* Job Description */}
         <textarea
           placeholder="Job Description"
           value={form.job_description}
-          onChange={e => setForm(f => ({ ...f, job_description: e.target.value }))}
+          onChange={e =>
+            setForm(f => ({ ...f, job_description: e.target.value }))
+          }
           className="w-full p-2 border rounded"
           rows={4}
         />
+
+        {/* Status */}
         <select
           value={form.status}
           onChange={e => setForm(f => ({ ...f, status: e.target.value }))}
@@ -75,6 +91,7 @@ export default function EditWorkOrderPage() {
           <option value="completed">Completed</option>
         </select>
 
+        {/* Events */}
         <div>
           <h2 className="text-xl font-semibold mb-2">Events</h2>
           {form.events.map((ev, i) => (
@@ -124,6 +141,7 @@ export default function EditWorkOrderPage() {
           </button>
         </div>
 
+        {/* Save */}
         <button
           type="submit"
           className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded"

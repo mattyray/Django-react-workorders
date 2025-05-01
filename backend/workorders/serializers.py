@@ -2,9 +2,12 @@ from rest_framework import serializers
 from .models import WorkOrder, Event, JobAttachment, JobNote
 
 class EventSerializer(serializers.ModelSerializer):
+    # mark work_order as read-only so DRF won't expect it in the input
+    work_order = serializers.PrimaryKeyRelatedField(read_only=True)
+
     class Meta:
         model = Event
-        fields = '__all__'
+        fields = ['event_type', 'address', 'date', 'work_order']
 
 class JobAttachmentSerializer(serializers.ModelSerializer):
     class Meta:
