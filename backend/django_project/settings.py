@@ -21,6 +21,7 @@ ALLOWED_HOSTS = env.list("DJANGO_ALLOWED_HOSTS", default=[
     "localhost",
     "127.0.0.1",
     "0.0.0.0",
+    "https://django-react-workorders-c54b71b489da.herokuapp.com",
 ])
 
 # ✅ Installed Apps
@@ -140,4 +141,4 @@ STATICFILES_FINDERS = [
     'django.contrib.staticfiles.finders.AppDirectoriesFinder',
 ]
 
-CORS_ALLOW_ALL_ORIGINS = True  # 👈 For development only
+CORS_ALLOW_ALL_ORIGINS = True 
