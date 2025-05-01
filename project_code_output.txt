@@ -427,9 +427,12 @@ from rest_framework import serializers
 from .models import WorkOrder, Event, JobAttachment, JobNote
 
 class EventSerializer(serializers.ModelSerializer):
+    # mark work_order as read-only so DRF won't expect it in the input
+    work_order = serializers.PrimaryKeyRelatedField(read_only=True)
+
     class Meta:
         model = Event
-        fields = '__all__'
+        fields = ['event_type', 'address', 'date', 'work_order']
 
 class JobAttachmentSerializer(serializers.ModelSerializer):
     class Meta:
@@ -442,7 +445,8 @@ class JobNoteSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class WorkOrderSerializer(serializers.ModelSerializer):
-    events = EventSerializer(many=True, read_only=True)
+    # Remove read_only so we can accept writes
+    events = EventSerializer(many=True)
     attachments = JobAttachmentSerializer(many=True, read_only=True)
     notes = JobNoteSerializer(many=True, read_only=True)
 
@@ -458,6 +462,22 @@ class WorkOrderSerializer(serializers.ModelSerializer):
             Event.objects.create(work_order=workorder, **event_data)
         return workorder
 
+    def update(self, instance, validated_data):
+        # Pull off any nested events (if provided)
+        events_data = validated_data.pop('events', None)
+
+        # Update the WorkOrder itself
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        instance.save()
+
+        if events_data is not None:
+            # Simple strategy: delete all old events and recreate
+            instance.events.all().delete()
+            for event_data in events_data:
+                Event.objects.create(work_order=instance, **event_data)
+
+        return instance
 ===== backend/workorders/views.py =====
 from rest_framework import generics
 from .models import WorkOrder
@@ -511,8 +531,12 @@ admin.site.register(JobNote)
     "preview": "vite preview"
   },
   "dependencies": {
+    "@fullcalendar/common": "^5.11.5",
+    "@fullcalendar/daygrid": "^6.1.17",
+    "@fullcalendar/react": "^6.1.17",
     "axios": "^1.9.0",
     "react": "^19.0.0",
+    "react-calendar": "^5.1.0",
     "react-dom": "^19.0.0"
   },
   "devDependencies": {
@@ -572,10 +596,13 @@ export default function App() {
 ===== frontend/src/Router.jsx =====
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import Home       from './pages/Home.jsx';
-import WorkOrders from './pages/WorkOrders.jsx';
-import Navbar     from './components/Navbar.jsx';
-import Footer     from './components/Footer.jsx';
+import Home                    from './pages/Home.jsx';
+import WorkOrders              from './pages/WorkOrders.jsx';
+import CreateWorkOrderPage     from './pages/CreateWorkOrderPage.jsx';
+import WorkOrderDetailPage     from './pages/WorkOrderDetailPage.jsx';
+import EditWorkOrderPage       from './pages/EditWorkOrderPage.jsx';
+import Navbar                  from './components/Navbar.jsx';
+import Footer                  from './components/Footer.jsx';
 
 export default function AppRouter() {
   return (
@@ -586,6 +613,9 @@ export default function AppRouter() {
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/workorders" element={<WorkOrders />} />
+            <Route path="/workorders/new" element={<CreateWorkOrderPage />} />
+            <Route path="/workorders/:id" element={<WorkOrderDetailPage />} />
+            <Route path="/workorders/:id/edit" element={<EditWorkOrderPage />} />
           </Routes>
         </main>
         <Footer />
@@ -603,7 +633,7 @@ import App                 from './App.jsx';
 createRoot(document.getElementById('root')).render(
   <StrictMode>
     <App />
-  </StrictMode>
+  </StrictMode>,
 );
 
 ===== frontend/src/index.css =====
@@ -971,13 +1001,311 @@ function WorkOrderList({ workOrders, onAddEvent }) {
 
 export default WorkOrderList;
 
+===== frontend/src/pages/CreateWorkOrderPage.jsx =====
+import React, { useState } from 'react';
+import { useNavigate }      from 'react-router-dom';
+import axios                from 'axios';
+
+export default function CreateWorkOrderPage() {
+  const navigate = useNavigate();
+  const [form, setForm] = useState({
+    client_name: '',
+    job_description: '',
+    status: 'pending',
+    events: [],
+  });
+
+  const addEvent = () =>
+    setForm(f => ({
+      ...f,
+      events: [...f.events, { event_type: 'pickup', address: '', date: '' }],
+    }));
+
+  const updateEvent = (i, key, val) =>
+    setForm(f => {
+      const ev = [...f.events];
+      ev[i] = { ...ev[i], [key]: val };
+      return { ...f, events: ev };
+    });
+
+  const removeEvent = i =>
+    setForm(f => {
+      const ev = [...f.events];
+      ev.splice(i, 1);
+      return { ...f, events: ev };
+    });
+
+  const handleSubmit = async e => {
+    e.preventDefault();
+    try {
+      await axios.post('http://localhost:8002/api/workorders/', form);
+      navigate('/workorders');
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  return (
+    <div className="container mx-auto p-6 space-y-6">
+      <h1 className="text-2xl font-bold">New Work Order</h1>
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <input
+          type="text"
+          placeholder="Client Name"
+          value={form.client_name}
+          onChange={e => setForm(f => ({ ...f, client_name: e.target.value }))}
+          className="w-full p-2 border rounded"
+          required
+        />
+        <textarea
+          placeholder="Job Description"
+          value={form.job_description}
+          onChange={e => setForm(f => ({ ...f, job_description: e.target.value }))}
+          className="w-full p-2 border rounded"
+          rows={4}
+        />
+        <select
+          value={form.status}
+          onChange={e => setForm(f => ({ ...f, status: e.target.value }))}
+          className="w-full p-2 border rounded"
+        >
+          <option value="pending">Pending</option>
+          <option value="in_progress">In Progress</option>
+          <option value="completed">Completed</option>
+        </select>
+
+        <div>
+          <h2 className="text-xl font-semibold mb-2">Events</h2>
+          {form.events.map((ev, i) => (
+            <div key={i} className="mb-4 p-4 border rounded space-y-2">
+              <div className="flex justify-end">
+                <button
+                  type="button"
+                  onClick={() => removeEvent(i)}
+                  className="text-red-500"
+                >
+                  Remove
+                </button>
+              </div>
+              <select
+                value={ev.event_type}
+                onChange={e => updateEvent(i, 'event_type', e.target.value)}
+                className="w-full p-2 border rounded"
+              >
+                <option value="pickup">Pickup</option>
+                <option value="install">Install</option>
+                <option value="dropoff">Drop Off</option>
+                <option value="wrap">Wrap</option>
+              </select>
+              <input
+                type="text"
+                placeholder="Address"
+                value={ev.address}
+                onChange={e => updateEvent(i, 'address', e.target.value)}
+                className="w-full p-2 border rounded"
+                required
+              />
+              <input
+                type="date"
+                value={ev.date}
+                onChange={e => updateEvent(i, 'date', e.target.value)}
+                className="w-full p-2 border rounded"
+                required
+              />
+            </div>
+          ))}
+          <button
+            type="button"
+            onClick={addEvent}
+            className="bg-gray-200 hover:bg-gray-300 px-4 py-2 rounded"
+          >
+            Add Event
+          </button>
+        </div>
+
+        <button
+          type="submit"
+          className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded"
+        >
+          Create Work Order
+        </button>
+      </form>
+    </div>
+  );
+}
+
+===== frontend/src/pages/EditWorkOrderPage.jsx =====
+import React, { useState, useEffect } from 'react';
+import { useParams, useNavigate }      from 'react-router-dom';
+import axios                            from 'axios';
+
+export default function EditWorkOrderPage() {
+  const { id }              = useParams();
+  const navigate            = useNavigate();
+  const [form, setForm]     = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    setLoading(true);
+    axios
+      .get(`http://localhost:8002/api/workorders/${id}/`)
+      .then(res => setForm(res.data))
+      .catch(console.error)
+      .finally(() => setLoading(false));
+  }, [id]);
+
+  if (loading) return <p>Loading…</p>;
+  if (!form)  return <p>Work order not found.</p>;
+
+  const addEvent = () =>
+    setForm(f => ({
+      ...f,
+      events: [...f.events, { event_type: 'pickup', address: '', date: '' }],
+    }));
+
+  const updateEvent = (i, key, val) =>
+    setForm(f => {
+      const ev = [...f.events];
+      ev[i] = { ...ev[i], [key]: val };
+      return { ...f, events: ev };
+    });
+
+  const removeEvent = i =>
+    setForm(f => {
+      const ev = [...f.events];
+      ev.splice(i, 1);
+      return { ...f, events: ev };
+    });
+
+  const handleSubmit = async e => {
+    e.preventDefault();
+    console.log('🔔 handleSubmit fired, payload:', form);
+    try {
+      const res = await axios.put(
+        `http://localhost:8002/api/workorders/${id}/`,
+        form
+      );
+      console.log('🟢 Response from server:', res);
+      navigate(`/workorders/${id}`);
+    } catch (err) {
+      console.error('🔴 Error in save:', err);
+    }
+  };
+
+  return (
+    <div className="container mx-auto p-6 space-y-6">
+      <h1 className="text-2xl font-bold">Edit Work Order #{id}</h1>
+      <form onSubmit={handleSubmit} className="space-y-4">
+        {/* Client Name */}
+        <input
+          type="text"
+          placeholder="Client Name"
+          value={form.client_name}
+          onChange={e => setForm(f => ({ ...f, client_name: e.target.value }))}
+          className="w-full p-2 border rounded"
+          required
+        />
+
+        {/* Job Description */}
+        <textarea
+          placeholder="Job Description"
+          value={form.job_description}
+          onChange={e =>
+            setForm(f => ({ ...f, job_description: e.target.value }))
+          }
+          className="w-full p-2 border rounded"
+          rows={4}
+        />
+
+        {/* Status */}
+        <select
+          value={form.status}
+          onChange={e => setForm(f => ({ ...f, status: e.target.value }))}
+          className="w-full p-2 border rounded"
+        >
+          <option value="pending">Pending</option>
+          <option value="in_progress">In Progress</option>
+          <option value="completed">Completed</option>
+        </select>
+
+        {/* Events */}
+        <div>
+          <h2 className="text-xl font-semibold mb-2">Events</h2>
+          {form.events.map((ev, i) => (
+            <div key={i} className="mb-4 p-4 border rounded space-y-2">
+              <div className="flex justify-end">
+                <button
+                  type="button"
+                  onClick={() => removeEvent(i)}
+                  className="text-red-500"
+                >
+                  Remove
+                </button>
+              </div>
+              <select
+                value={ev.event_type}
+                onChange={e => updateEvent(i, 'event_type', e.target.value)}
+                className="w-full p-2 border rounded"
+              >
+                <option value="pickup">Pickup</option>
+                <option value="install">Install</option>
+                <option value="dropoff">Drop Off</option>
+                <option value="wrap">Wrap</option>
+              </select>
+              <input
+                type="text"
+                placeholder="Address"
+                value={ev.address}
+                onChange={e => updateEvent(i, 'address', e.target.value)}
+                className="w-full p-2 border rounded"
+                required
+              />
+              <input
+                type="date"
+                value={ev.date}
+                onChange={e => updateEvent(i, 'date', e.target.value)}
+                className="w-full p-2 border rounded"
+                required
+              />
+            </div>
+          ))}
+          <button
+            type="button"
+            onClick={addEvent}
+            className="bg-gray-200 hover:bg-gray-300 px-4 py-2 rounded"
+          >
+            Add Event
+          </button>
+        </div>
+
+        {/* Save */}
+        <button
+          type="submit"
+          className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded"
+        >
+          Save Changes
+        </button>
+      </form>
+    </div>
+  );
+}
+
 ===== frontend/src/pages/Home.jsx =====
 import React from 'react';
+import FullCalendar from '@fullcalendar/react';
+import dayGridPlugin from '@fullcalendar/daygrid';
 import { Link } from 'react-router-dom';
 
 export default function Home() {
+  const events = [
+    { title: 'Pickup for Order #1', date: '2025-05-03' },
+    { title: 'Install for Order #2', date: '2025-05-10' },
+    { title: 'Drop-off for Order #3', date: '2025-05-15' },
+  ];
+
   return (
     <main className="min-h-screen bg-gradient-to-r from-blue-500 to-indigo-600 text-white">
+      {/* Hero */}
       <section className="min-h-[70vh] flex flex-col items-center justify-center px-6">
         <h1 className="text-4xl md:text-6xl font-bold mb-4 drop-shadow-lg">
           Streamline Your Work Orders
@@ -987,17 +1315,13 @@ export default function Home() {
         </p>
         <Link
           to="/workorders"
-          className="
-            bg-white text-blue-600 font-semibold
-            px-6 py-3 rounded-full
-            shadow-md hover:shadow-lg
-            transition-shadow duration-200
-          "
+          className="bg-white text-blue-600 font-semibold px-6 py-3 rounded-full shadow-md hover:shadow-lg transition-shadow duration-200"
         >
           Get Started
         </Link>
       </section>
 
+      {/* Features */}
       <section className="py-12 bg-gray-50 text-gray-800 dark:bg-gray-800 dark:text-gray-200">
         <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8 px-6">
           <div className="bg-white dark:bg-gray-700 rounded-xl shadow-md p-6 text-center">
@@ -1017,87 +1341,171 @@ export default function Home() {
           </div>
         </div>
       </section>
+
+      {/* Calendar */}
+      <section className="py-12 bg-white text-gray-800 dark:bg-gray-900 dark:text-gray-200">
+        <div className="max-w-4xl mx-auto px-6">
+          <h2 className="text-2xl font-semibold mb-4 text-center">Upcoming Events</h2>
+          <FullCalendar
+            plugins={[dayGridPlugin]}
+            initialView="dayGridMonth"
+            events={events}
+            height="auto"
+          />
+        </div>
+      </section>
     </main>
   );
 }
 
-===== frontend/src/pages/WorkOrders.jsx =====
-import { useState, useEffect } from 'react';
-import axios from 'axios';
-import WorkOrderList from '../components/WorkOrderList';
-import WorkOrderForm from '../components/WorkOrderForm';
+===== frontend/src/pages/WorkOrderDetailPage.jsx =====
+import React, { useState, useEffect }  from 'react';
+import { useParams, useNavigate }      from 'react-router-dom';
+import axios                            from 'axios';
+import { formatDate }                   from '../utils/formatDate';
 
-function WorkOrders() {
-  const [workOrders, setWorkOrders] = useState([]);
+export default function WorkOrderDetailPage() {
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Fetch work orders on page load
   useEffect(() => {
-    fetchWorkOrders();
-  }, []);
+    axios
+      .get(`http://localhost:8002/api/workorders/${id}/`)
+      .then((res) => setOrder(res.data))
+      .catch(console.error)
+      .finally(() => setLoading(false));
+  }, [id]);
 
-  const fetchWorkOrders = async () => {
-    try {
-      const response = await axios.get('http://localhost:8002/api/workorders/');
-      setWorkOrders(response.data);
-    } catch (error) {
-      console.error('Error fetching work orders:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleAddWorkOrder = async (newOrder) => {
-    try {
-      const response = await axios.post('http://localhost:8002/api/workorders/', newOrder);
-      setWorkOrders((prevOrders) => [response.data, ...prevOrders]);
-    } catch (error) {
-      console.error('Error adding work order:', error);
-    }
-  };
-
-  const handleAddEvent = async (workOrderId, eventData) => {
-    try {
-      const response = await axios.post('http://localhost:8002/api/events/', {
-        ...eventData,
-        work_order: workOrderId,
-      });
-
-      // Update the specific work order with the new event
-      setWorkOrders((prevOrders) =>
-        prevOrders.map((order) =>
-          order.id === workOrderId
-            ? {
-                ...order,
-                events: [...(order.events || []), response.data],
-              }
-            : order
-        )
-      );
-    } catch (error) {
-      console.error('Error adding event:', error);
-    }
-  };
+  if (loading) return <p>Loading...</p>;
+  if (!order) return <p>Work order not found.</p>;
 
   return (
-    <div style={{ padding: "2rem", textAlign: "center" }}>
-      <h1>Work Orders Page</h1>
-      <p>Manage your upcoming work orders below:</p>
-
-      <WorkOrderForm onAddWorkOrder={handleAddWorkOrder} />
-
-      <div style={{ marginTop: "2rem" }}>
-        {loading ? (
-          <p>Loading work orders...</p>
+    <div className="container mx-auto p-6 space-y-6">
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold">Work Order #{order.id}</h1>
+        <button
+          onClick={() => navigate(`/workorders/${id}/edit`)}
+          className="bg-yellow-500 hover:bg-yellow-600 text-white py-2 px-4 rounded"
+        >
+          Edit
+        </button>
+      </div>
+      <div className="space-y-2">
+        <p><strong>Client:</strong> {order.client_name}</p>
+        <p><strong>Description:</strong> {order.job_description}</p>
+        <p><strong>Status:</strong> {order.status.replace('_',' ')}</p>
+        <p><strong>Created:</strong> {formatDate(order.created_at)}</p>
+      </div>
+      <div>
+        <h2 className="text-xl font-semibold mb-2">Events</h2>
+        {order.events.length === 0 ? (
+          <p>No scheduled events.</p>
         ) : (
-          <WorkOrderList workOrders={workOrders} onAddEvent={handleAddEvent} />
+          <ul className="list-disc list-inside space-y-1">
+            {order.events.map((e) => (
+              <li key={e.id}>
+                {e.event_type.replace('_',' ')} at {e.address} on {formatDate(e.date)}
+              </li>
+            ))}
+          </ul>
         )}
       </div>
     </div>
   );
 }
 
-export default WorkOrders;
+===== frontend/src/pages/WorkOrders.jsx =====
+import React, { useState, useEffect } from 'react';
+import { Link, useNavigate }             from 'react-router-dom';
+import { fetchWorkOrders }                from '../services/api';
+
+export default function WorkOrders() {
+  const [workOrders, setWorkOrders] = useState([]);
+  const [loading, setLoading]       = useState(true);
+  const navigate                    = useNavigate();
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await fetchWorkOrders();
+        setWorkOrders(res.data);
+      } catch (e) {
+        console.error(e);
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, []);
+
+  const statusBadge = (status) => {
+    const base = 'px-2 py-1 rounded-full text-xs font-semibold inline-block';
+    if (status === 'pending')     return `${base} bg-yellow-100 text-yellow-800`;
+    if (status === 'in_progress') return `${base} bg-blue-100   text-blue-800`;
+    if (status === 'completed')   return `${base} bg-green-100  text-green-800`;
+    return base;
+  };
+
+  return (
+    <div className="container mx-auto p-6">
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-3xl font-bold">Work Orders</h1>
+        <Link
+          to="/workorders/new"
+          className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded"
+        >
+          New Work Order
+        </Link>
+      </div>
+
+      {loading ? (
+        <p>Loading work orders...</p>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50">
+              <tr>
+                {['ID','Client','Status','Created'].map((h) => (
+                  <th
+                    key={h}
+                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase"
+                  >
+                    {h}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {workOrders.map((o) => (
+                <tr
+                  key={o.id}
+                  className="hover:bg-gray-50 cursor-pointer"
+                  onClick={() => navigate(`/workorders/${o.id}`)}
+                >
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                    {o.id}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    {o.client_name || '—'}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <span className={statusBadge(o.status)}>
+                      {o.status.replace('_', ' ')}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {new Date(o.created_at).toLocaleDateString()}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}
 
 ===== frontend/src/services/api.jsx =====
 // src/services/api.js
