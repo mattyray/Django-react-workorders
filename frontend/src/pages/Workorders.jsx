@@ -1,18 +1,19 @@
 import React, { useState, useEffect } from 'react';
-import { Link }                             from 'react-router-dom';
-import { fetchWorkOrders }                  from '../services/api';
+import { Link, useNavigate }             from 'react-router-dom';
+import { fetchWorkOrders }                from '../services/api';
 
 export default function WorkOrders() {
   const [workOrders, setWorkOrders] = useState([]);
   const [loading, setLoading]       = useState(true);
+  const navigate                    = useNavigate();
 
   useEffect(() => {
     (async () => {
       try {
-        const response = await fetchWorkOrders();
-        setWorkOrders(response.data);
-      } catch (error) {
-        console.error('Error fetching work orders:', error);
+        const res = await fetchWorkOrders();
+        setWorkOrders(res.data);
+      } catch (e) {
+        console.error(e);
       } finally {
         setLoading(false);
       }
@@ -21,9 +22,9 @@ export default function WorkOrders() {
 
   const statusBadge = (status) => {
     const base = 'px-2 py-1 rounded-full text-xs font-semibold inline-block';
-    if (status === 'pending')       return `${base} bg-yellow-100 text-yellow-800`;
-    if (status === 'in_progress')   return `${base} bg-blue-100 text-blue-800`;
-    if (status === 'completed')     return `${base} bg-green-100 text-green-800`;
+    if (status === 'pending')     return `${base} bg-yellow-100 text-yellow-800`;
+    if (status === 'in_progress') return `${base} bg-blue-100   text-blue-800`;
+    if (status === 'completed')   return `${base} bg-green-100  text-green-800`;
     return base;
   };
 
@@ -46,18 +47,14 @@ export default function WorkOrders() {
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                  ID
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                  Client
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                  Status
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                  Created
-                </th>
+                {['ID','Client','Status','Created'].map((h) => (
+                  <th
+                    key={h}
+                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase"
+                  >
+                    {h}
+                  </th>
+                ))}
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
@@ -65,7 +62,7 @@ export default function WorkOrders() {
                 <tr
                   key={o.id}
                   className="hover:bg-gray-50 cursor-pointer"
-                  onClick={() => window.location = `/workorders/${o.id}`}
+                  onClick={() => navigate(`/workorders/${o.id}`)}
                 >
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
                     {o.id}
