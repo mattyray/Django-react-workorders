@@ -21,7 +21,7 @@ ALLOWED_HOSTS = env.list("DJANGO_ALLOWED_HOSTS", default=[
     "localhost",
     "127.0.0.1",
     "0.0.0.0",
-    "https://django-react-workorders-c7b45b3ef460.herokuapp.com",
+    ".herokuapp.com",
 ])
 
 # ✅ Installed Apps
