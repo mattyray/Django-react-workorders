@@ -16,7 +16,6 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy entire backend project
 COPY . .
 
-# ✅ Ensure staticfiles directory exists for WhiteNoise NEW ! CHECK FOR RUNTIME PROBLEMS
 
 # ✅ FIXED: use shell form so $PORT is evaluated correctly
 CMD ["sh", "-c", "gunicorn django_project.wsgi --bind 0.0.0.0:$PORT"]
