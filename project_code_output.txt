@@ -1,31 +1,11 @@
 ===== Dockerfile =====
-# Use official Python image as base
-FROM python:3.10.4-slim-bullseye
-
-# Set environment variables
-ENV PIP_DISABLE_PIP_VERSION_CHECK=1
-ENV PYTHONDONTWRITEBYTECODE=1
-ENV PYTHONUNBUFFERED=1
-
-# Set work directory
-WORKDIR /code
-
-# Install Python dependencies
-COPY ./requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
-
-# Copy project files
-COPY . .
-
-# Run Gunicorn (production use)
-CMD ["sh", "-c", "gunicorn django_project.wsgi --bind 0.0.0.0:${PORT:-8000}"]
 
 ===== docker-compose.yml =====
 services:
   web:
     build:
-      context: .  # 👈 ONLY backend is built
-    working_dir: /code/backend    # 👈 Set working dir to /code
+      context: ./backend
+    working_dir: /code
     command: python manage.py runserver 0.0.0.0:8002
     ports:
       - "8002:8002"
@@ -33,19 +13,12 @@ services:
       db:
         condition: service_healthy
     environment:
-      - "DJANGO_DEBUG=True"
-      - "DJANGO_SECURE_SSL_REDIRECT=False"
-      - "DJANGO_SECURE_HSTS_SECONDS=0"
-      - "DJANGO_SECURE_HSTS_INCLUDE_SUBDOMAINS=False"
-      - "DJANGO_SECURE_HSTS_PRELOAD=False"
-      - "DJANGO_SESSION_COOKIE_SECURE=False"
-      - "DJANGO_CSRF_COOKIE_SECURE=False"
-      - "DATABASE_URL=postgresql://postgres:postgres@db:5432/art_moving"
+      - DJANGO_DEBUG=True
+      - DATABASE_URL=postgresql://postgres:postgres@db:5432/art_moving
     volumes:
-      - .:/code   # 👈 Mount only the backend
+      - ./backend:/code
     networks:
       - art_moving_network
-
 
   db:
     image: postgres:15
@@ -71,9 +44,11 @@ networks:
   art_moving_network:
 
 ===== docker-compose-prod.yml =====
+
 services:
   web:
-    build: .
+    build:
+      context: .
     command: gunicorn django_project.wsgi --bind 0.0.0.0:$PORT
     ports:
       - "8000:8000"
@@ -81,15 +56,16 @@ services:
       db:
         condition: service_healthy
     environment:
-      - "DJANGO_DEBUG=False"
-      - "DJANGO_SECURE_SSL_REDIRECT=True"
-      - "DJANGO_SECURE_HSTS_SECONDS=2592000"  # 30 days
-      - "DJANGO_SECURE_HSTS_INCLUDE_SUBDOMAINS=True"
-      - "DJANGO_SECURE_HSTS_PRELOAD=True"
-      - "DJANGO_SESSION_COOKIE_SECURE=True"
-      - "DJANGO_CSRF_COOKIE_SECURE=True"
-      - "PORT=8000"  # Needed for Heroku
-      - "DATABASE_URL=${DATABASE_URL}"
+      - DJANGO_DEBUG=False
+      - DJANGO_SECURE_SSL_REDIRECT=True
+      - DJANGO_SECURE_HSTS_SECONDS=2592000
+      - DJANGO_SECURE_HSTS_INCLUDE_SUBDOMAINS=True
+      - DJANGO_SECURE_HSTS_PRELOAD=True
+      - DJANGO_SESSION_COOKIE_SECURE=True
+      - DJANGO_CSRF_COOKIE_SECURE=True
+      - PORT=8000
+      - DATABASE_URL=${DATABASE_URL}
+
   db:
     image: postgres:15
     volumes:
@@ -106,30 +82,8 @@ volumes:
   postgres_data:
 
 ===== heroku.yml =====
-build:
-  docker:
-    web: Dockerfile  # Tells Heroku to use the Dockerfile to build your app
-
-release:
-  image: web
-  command:
-    - python manage.py migrate  # Runs database migrations
-    - python manage.py collectstatic --noinput  # Collects static files
-
-run:
-  web: gunicorn django_project.wsgi --bind 0.0.0.0:$PORT  # Starts the app
 
 ===== requirements.txt =====
-asgiref==3.8.1
-Django==5.1.6
-django-crispy-forms==2.4
-django-environ==0.12.0
-djangorestframework==3.15.1
-django-cors-headers==4.3.1
-gunicorn==23.0.0
-psycopg2-binary==2.9.10
-sqlparse==0.5.3
-whitenoise==6.9.0
 
 ===== backend/manage.py =====
 #!/usr/bin/env python
@@ -215,6 +169,7 @@ ALLOWED_HOSTS = env.list("DJANGO_ALLOWED_HOSTS", default=[
     "localhost",
     "127.0.0.1",
     "0.0.0.0",
+    ".herokuapp.com",
 ])
 
 # ✅ Installed Apps
@@ -334,17 +289,22 @@ STATICFILES_FINDERS = [
     'django.contrib.staticfiles.finders.AppDirectoriesFinder',
 ]
 
-CORS_ALLOW_ALL_ORIGINS = True  # 👈 For development only
+CORS_ALLOW_ALL_ORIGINS = True 
 
 ===== backend/django_project/urls.py =====
 from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
+from django.http import JsonResponse
+
+def api_root(request):
+    return JsonResponse({"message": "Django API is running."})
 
 urlpatterns = [
+    path("", api_root),  # ✅ Added simple health check route
     path("admin/", admin.site.urls),
-    path("api/workorders/", include("workorders.urls")),  # Our main API routes
+    path("api/workorders/", include("workorders.urls")),  # Your main API
 ]
 
 if settings.DEBUG:
