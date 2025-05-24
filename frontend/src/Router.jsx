@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Home                    from './pages/Home.jsx';
 import WorkOrders              from './pages/WorkOrders.jsx';
 import CreateWorkOrderPage     from './pages/CreateWorkOrderPage.jsx';
@@ -20,6 +20,7 @@ export default function AppRouter() {
             <Route path="/workorders/new" element={<CreateWorkOrderPage />} />
             <Route path="/workorders/:id" element={<WorkOrderDetailPage />} />
             <Route path="/workorders/:id/edit" element={<EditWorkOrderPage />} />
+            <Route path="*" element={<Navigate to="/" />} />
           </Routes>
         </main>
         <Footer />
