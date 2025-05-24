@@ -1,24 +1,49 @@
-import React, { useState, useEffect }  from 'react';
-import { useParams, useNavigate }      from 'react-router-dom';
-import axios                            from 'axios';
-import { formatDate }                   from '../utils/formatDate';
+import React, { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import axios from 'axios';
+import { formatDate } from '../utils/formatDate';
 
 export default function WorkOrderDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     axios
       .get(`http://localhost:8002/api/workorders/${id}/`)
       .then((res) => setOrder(res.data))
-      .catch(console.error)
+      .catch((err) => {
+        setError("Failed to load work order.");
+        console.error(err);
+      })
       .finally(() => setLoading(false));
   }, [id]);
 
-  if (loading) return <p>Loading...</p>;
-  if (!order) return <p>Work order not found.</p>;
+  if (loading) {
+    return (
+      <div className="text-center mt-10 text-blue-600 text-lg font-semibold">
+        Loading work order...
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="text-center mt-10 text-red-600 text-lg font-semibold">
+        {error}
+      </div>
+    );
+  }
+
+  if (!order) {
+    return (
+      <div className="text-center mt-10 text-gray-600 text-lg">
+        Work order not found.
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto p-6 space-y-6">
