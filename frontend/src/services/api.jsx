@@ -1,7 +1,7 @@
 // src/services/api.js
 import axios from 'axios';
 
-const API_BASE = 'http://localhost:8002/api';
+const API_BASE = import.meta.env.VITE_API_BASE;
 
 export const fetchWorkOrders = () => axios.get(`${API_BASE}/workorders/`);
 export const createWorkOrder = (data) => axios.post(`${API_BASE}/workorders/`, data);
