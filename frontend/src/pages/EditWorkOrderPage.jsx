@@ -1,24 +1,25 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate }      from 'react-router-dom';
-import axios                            from 'axios';
+import { useParams, useNavigate } from 'react-router-dom';
+import axios from 'axios';
 
 export default function EditWorkOrderPage() {
-  const { id }              = useParams();
-  const navigate            = useNavigate();
-  const [form, setForm]     = useState(null);
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const [form, setForm] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     setLoading(true);
     axios
       .get(`http://localhost:8002/api/workorders/${id}/`)
       .then(res => setForm(res.data))
-      .catch(console.error)
+      .catch(err => {
+        console.error(err);
+        setError("Failed to load work order.");
+      })
       .finally(() => setLoading(false));
   }, [id]);
-
-  if (loading) return <p>Loading…</p>;
-  if (!form)  return <p>Work order not found.</p>;
 
   const addEvent = () =>
     setForm(f => ({
@@ -42,24 +43,46 @@ export default function EditWorkOrderPage() {
 
   const handleSubmit = async e => {
     e.preventDefault();
-    console.log('🔔 handleSubmit fired, payload:', form);
     try {
-      const res = await axios.put(
+      await axios.put(
         `http://localhost:8002/api/workorders/${id}/`,
         form
       );
-      console.log('🟢 Response from server:', res);
       navigate(`/workorders/${id}`);
     } catch (err) {
       console.error('🔴 Error in save:', err);
+      alert('Failed to save changes.');
     }
   };
+
+  if (loading) {
+    return (
+      <div className="text-center mt-10 text-blue-600 text-lg font-semibold">
+        Loading work order...
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="text-center mt-10 text-red-600 text-lg font-semibold">
+        {error}
+      </div>
+    );
+  }
+
+  if (!form) {
+    return (
+      <div className="text-center mt-10 text-gray-600 text-lg">
+        Work order not found.
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto p-6 space-y-6">
       <h1 className="text-2xl font-bold">Edit Work Order #{id}</h1>
       <form onSubmit={handleSubmit} className="space-y-4">
-        {/* Client Name */}
         <input
           type="text"
           placeholder="Client Name"
@@ -69,7 +92,6 @@ export default function EditWorkOrderPage() {
           required
         />
 
-        {/* Job Description */}
         <textarea
           placeholder="Job Description"
           value={form.job_description}
@@ -80,7 +102,6 @@ export default function EditWorkOrderPage() {
           rows={4}
         />
 
-        {/* Status */}
         <select
           value={form.status}
           onChange={e => setForm(f => ({ ...f, status: e.target.value }))}
@@ -91,7 +112,6 @@ export default function EditWorkOrderPage() {
           <option value="completed">Completed</option>
         </select>
 
-        {/* Events */}
         <div>
           <h2 className="text-xl font-semibold mb-2">Events</h2>
           {form.events.map((ev, i) => (
@@ -141,7 +161,6 @@ export default function EditWorkOrderPage() {
           </button>
         </div>
 
-        {/* Save */}
         <button
           type="submit"
           className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded"
