@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { STATUS_OPTIONS } from '../constants';
 
 function WorkOrderForm({ onAddWorkOrder }) {
   const [clientName, setClientName] = useState('');
@@ -54,9 +55,11 @@ function WorkOrderForm({ onAddWorkOrder }) {
           onChange={(e) => setStatus(e.target.value)}
           style={{ width: '100%', padding: '0.5rem', marginTop: '0.5rem' }}
         >
-          <option value="pending">Pending</option>
-          <option value="in_progress">In Progress</option>
-          <option value="completed">Completed</option>
+          {STATUS_OPTIONS.map((opt) => (
+            <option key={opt.value} value={opt.value}>
+              {opt.label}
+            </option>
+          ))}
         </select>
       </div>
 
